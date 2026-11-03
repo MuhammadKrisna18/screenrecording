@@ -31,7 +31,7 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK && result.data != null) {
-            viewModel.startRecording(result.resultCode, result.data!!, this)
+            viewModel.startRecordingWithCountdown(result.resultCode, result.data!!, this)
         }
     }
 
@@ -49,7 +49,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         setContent {
-            ScreenRecorderTheme {
+            ScreenRecorderTheme(darkTheme = true) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -61,6 +61,7 @@ class MainActivity : ComponentActivity() {
                         onSelectFps = { viewModel.selectFps(it) },
                         onStartRecordingClick = { checkAndRequestPermissions() },
                         onStopRecordingClick = { viewModel.stopRecording(this) },
+                        onCancelCountdownClick = { viewModel.cancelCountdown() },
                         onDownloadUpdateClick = { viewModel.downloadAndInstallUpdate() },
                         onInstallUpdateClick = { viewModel.installReadyUpdate(it) },
                         onDismissUpdateClick = { viewModel.dismissUpdate() },

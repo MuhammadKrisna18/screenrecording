@@ -64,18 +64,17 @@ class DeviceCapabilityChecker(private val context: Context) {
 
         return FpsOption.entries.map { option ->
             val isDisplaySupported = maxRefreshRate >= (option.fps - 1.0f)
-            val isEncoderSupported = runCatching {
-                encoderCapabilities?.areSizeAndRateSupported(
-                    resolution.width,
-                    resolution.height,
-                    option.fps.toDouble()
-                )
-            }.getOrNull() ?: (option.fps == 60)
+            val isEncoderSupported = isEncoderRateSupported(
+                encoderCapabilities,
+                resolution.width,
+                resolution.height,
+                option.fps
+            )
 
             val isSupported = isDisplaySupported && isEncoderSupported
             val reason = when {
-                !isDisplaySupported -> "Layar perangkat maksimal ${maxRefreshRate.roundToInt()}Hz"
-                !isEncoderSupported -> "Hardware encoder tidak mendukung ${option.fps} FPS"
+                !isDisplaySupported -> "Layar HP maks ${maxRefreshRate.roundToInt()}Hz"
+                !isEncoderSupported -> "Encoder tidak mendukung ${option.fps} FPS"
                 else -> null
             }
 
@@ -85,6 +84,27 @@ class DeviceCapabilityChecker(private val context: Context) {
                 reason = reason
             )
         }
+    }
+
+    private fun isEncoderRateSupported(
+        caps: MediaCodecInfo.VideoCapabilities?,
+        width: Int,
+        height: Int,
+        fps: Int
+    ): Boolean {
+        if (fps == 60) return true
+        if (caps == null) return false
+
+        val directCheck = runCatching { caps.areSizeAndRateSupported(width, height, fps.toDouble()) }.getOrDefault(false)
+        if (directCheck) return true
+
+        val flippedCheck = runCatching { caps.areSizeAndRateSupported(height, width, fps.toDouble()) }.getOrDefault(false)
+        if (flippedCheck) return true
+
+        val rateRange = runCatching { caps.supportedFrameRates }.getOrNull()
+        val maxFps = (rateRange?.upper as? Number)?.toDouble() ?: 60.0
+
+        return maxFps >= fps.toDouble()
     }
 
     private fun getPreferredVideoEncoderCapabilities(
@@ -100,7 +120,12 @@ class DeviceCapabilityChecker(private val context: Context) {
                     if (!info.isEncoder) continue
                     val caps = runCatching { info.getCapabilitiesForType(mime) }.getOrNull() ?: continue
                     val videoCaps = caps.videoCapabilities ?: continue
-                    val isSizeSupported = runCatching { videoCaps.isSizeSupported(width, height) }.getOrDefault(false)
+                    val minDim = minOf(width, height)
+                    val maxDim = maxOf(width, height)
+                    val isSizeSupported = runCatching {
+                        videoCaps.isSizeSupported(width, height) || videoCaps.isSizeSupported(maxDim, minDim)
+                    }.getOrDefault(false)
+
                     if (isSizeSupported) {
                         return@runCatching videoCaps
                     }

@@ -13,6 +13,8 @@ import com.screenrecorder.app.core.updater.AppUpdateManager
 import com.screenrecorder.app.core.updater.UpdateState
 import com.screenrecorder.app.recorder.service.RecordingStateHolder
 import com.screenrecorder.app.recorder.service.ScreenRecordService
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,6 +29,7 @@ class RecordingViewModel(application: Application) : AndroidViewModel(applicatio
     private val updateManager = AppUpdateManager(application)
     private val _uiState = MutableStateFlow(RecordingUiState())
     val uiState: StateFlow<RecordingUiState> = _uiState.asStateFlow()
+    private var countdownJob: Job? = null
 
     init {
         loadCapabilities()
@@ -127,7 +130,24 @@ class RecordingViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    fun startRecording(resultCode: Int, data: Intent, context: Context) {
+    fun startRecordingWithCountdown(resultCode: Int, data: Intent, context: Context) {
+        countdownJob?.cancel()
+        countdownJob = viewModelScope.launch {
+            for (i in 3 downTo 1) {
+                RecordingStateHolder.updateStatus(RecordingStatus.Countdown(i))
+                delay(1000)
+            }
+            executeStartRecording(resultCode, data, context)
+        }
+    }
+
+    fun cancelCountdown() {
+        countdownJob?.cancel()
+        countdownJob = null
+        RecordingStateHolder.updateStatus(RecordingStatus.Idle)
+    }
+
+    private fun executeStartRecording(resultCode: Int, data: Intent, context: Context) {
         val state = _uiState.value
         val intent = Intent(context, ScreenRecordService::class.java).apply {
             action = ScreenRecordService.ACTION_START
@@ -147,6 +167,8 @@ class RecordingViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun stopRecording(context: Context) {
+        countdownJob?.cancel()
+        countdownJob = null
         val intent = Intent(context, ScreenRecordService::class.java).apply {
             action = ScreenRecordService.ACTION_STOP
         }

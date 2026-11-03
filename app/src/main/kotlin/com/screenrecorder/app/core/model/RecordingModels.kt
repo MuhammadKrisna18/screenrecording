@@ -16,15 +16,15 @@ data class RecordingResolution(
     val width: Int,
     val height: Int
 ) {
-    val displayLabel: String
-        get() = "${width}x${height} (1080p)"
+    val dimensionText: String
+        get() = "${width}x${height}"
 }
 
 sealed interface RecordingStatus {
     data object Idle : RecordingStatus
+    data class Countdown(val secondsLeft: Int) : RecordingStatus
     data object Starting : RecordingStatus
     data class Recording(val durationMs: Long) : RecordingStatus
     data class Stopped(val outputUri: String?) : RecordingStatus
     data class Error(val message: String) : RecordingStatus
 }
-
