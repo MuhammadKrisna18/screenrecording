@@ -17,3 +17,4 @@ Aplikasi perekam layar Android Native berbasis Jetpack Compose dengan kualitas F
 ./gradlew assembleDebug
 ./gradlew assembleRelease
 ```
+
