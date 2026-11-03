@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">ScreenRecorder</string>
+    <string name="notification_channel_name">Perekaman Layar</string>
+    <string name="notification_channel_desc">Notifikasi status aktif perekaman layar</string>
+    <string name="notification_title">Sedang Merekam Layar</string>
+    <string name="action_stop_recording">Berhenti</string>
+</resources>
