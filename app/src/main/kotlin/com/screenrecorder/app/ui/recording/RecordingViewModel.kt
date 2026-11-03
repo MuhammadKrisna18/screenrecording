@@ -35,23 +35,25 @@ class RecordingViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun loadCapabilities() {
-        val resolution = capabilityChecker.calculateResolution()
-        val maxRefreshRate = capabilityChecker.getMaxDisplayRefreshRate()
-        val capabilities = capabilityChecker.checkFpsCapabilities(resolution)
+        runCatching {
+            val resolution = capabilityChecker.calculateResolution()
+            val maxRefreshRate = capabilityChecker.getMaxDisplayRefreshRate()
+            val capabilities = capabilityChecker.checkFpsCapabilities(resolution)
 
-        val initialFps = if (capabilities.any { it.option == _uiState.value.selectedFps && it.isSupported }) {
-            _uiState.value.selectedFps
-        } else {
-            capabilities.firstOrNull { it.isSupported }?.option ?: FpsOption.FPS_60
-        }
+            val initialFps = if (capabilities.any { it.option == _uiState.value.selectedFps && it.isSupported }) {
+                _uiState.value.selectedFps
+            } else {
+                capabilities.firstOrNull { it.isSupported }?.option ?: FpsOption.FPS_60
+            }
 
-        _uiState.update {
-            it.copy(
-                resolution = resolution,
-                maxDisplayRefreshRate = maxRefreshRate,
-                fpsCapabilities = capabilities,
-                selectedFps = initialFps
-            )
+            _uiState.update {
+                it.copy(
+                    resolution = resolution,
+                    maxDisplayRefreshRate = maxRefreshRate,
+                    fpsCapabilities = capabilities,
+                    selectedFps = initialFps
+                )
+            }
         }
     }
 
